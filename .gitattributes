@@ -1,0 +1,2 @@
+checkPoint/*.pth filter=lfs diff=lfs merge=lfs -text
+checkPoint/*.tar.gz filter=lfs diff=lfs merge=lfs -text
