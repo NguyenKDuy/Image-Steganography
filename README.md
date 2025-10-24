@@ -15,6 +15,10 @@ This is a PyTorch implementation of image steganography via deep learning, which
 
    ```
    pip install -r requirements.txt
+   Also you can use this to train with new dataset (note: you have setup the dataset a bit, here I use ImageNet-tiny-200 - link: https://cs231n.stanford.edu/tiny-imagenet-200.zip)
+   python main.py --dataset train --cuda True --batchSize 8 --niter 3 --lr 0.001 --outckpts ./training/checkpoints --outlogs ./training/logs --trainpics ../../../imagenet-tiny/training_half --validationpics ../../../imagenet-tiny/val --remark "second_train_run" --imageSize 128 --Hnet .\training\checkpointsLAPTOP-92N761HV_2025-10-24-22_03_54second_train_run\checkPoints\netH_epoch_1_sumloss=0.001056_Hloss=0.000526.pth --Rnet .\training\checkpointsLAPTOP-92N761HV_2025-10-24-22_03_54second_train_run\checkPoints\netR_epoch_1_sumloss=0.001056_Rloss=0.000706.pth
+   Even, you can train with pretrained model:
+
    ```
 
 3. If you just want to inference via the model
@@ -22,8 +26,12 @@ This is a PyTorch implementation of image steganography via deep learning, which
    ```
    # because the file size is limited to 100MB, so the model is separated into 2 file netH.tar.gz.1 and netH.tar.gz.2 in the checkPoint folder
    cat ./checkPoint/netH.tar.gz* | tar -xzv -C ./checkPoint/
-   CUDA_VISIBLE_DEVICES=0 python main.py --test=./example_pics
+   python main.py --test=./example_pics --remark "second inferrence"
+   # Also you can use other model to inferrence, take an example
+   python main.py --test=./example_pics --Hnet .\training\checkpointsLAPTOP-92N761HV_2025-10-24-22_03_54second_train_run\checkPoints\netH_epoch_1_sumloss=0.001056_Hloss=0.000526.pth --Rnet .\training\checkpointsLAPTOP-92N761HV_2025-10-24-22_03_54second_train_run\checkPoints\netR_epoch_1_sumloss=0.001056_Rloss=0.000706.pth
+   
    ```
+   
 
    You can also use your own image folder to replace example_pics.
 
