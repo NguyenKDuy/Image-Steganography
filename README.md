@@ -15,9 +15,9 @@ This is a PyTorch implementation of image steganography via deep learning, which
 
    ```
    pip install -r requirements.txt
-   Also you can use this to train with new dataset (note: you have setup the dataset a bit, here I use ImageNet-tiny-200 - link: https://cs231n.stanford.edu/tiny-imagenet-200.zip)
+   # Also you can use this to train with new dataset (note: you have setup the dataset a bit, here I use ImageNet-tiny-200 - link: https://cs231n.stanford.edu/tiny-imagenet-200.zip)
    python main.py --dataset train --cuda True --batchSize 8 --niter 3 --lr 0.001 --outckpts ./training/checkpoints --outlogs ./training/logs --trainpics ../../../imagenet-tiny/training_half --validationpics ../../../imagenet-tiny/val --remark "second_train_run" --imageSize 128 --Hnet .\training\checkpointsLAPTOP-92N761HV_2025-10-24-22_03_54second_train_run\checkPoints\netH_epoch_1_sumloss=0.001056_Hloss=0.000526.pth --Rnet .\training\checkpointsLAPTOP-92N761HV_2025-10-24-22_03_54second_train_run\checkPoints\netR_epoch_1_sumloss=0.001056_Rloss=0.000706.pth
-   Even, you can train with pretrained model:
+   # Even, you can train with pretrained model:
 
    ```
 
