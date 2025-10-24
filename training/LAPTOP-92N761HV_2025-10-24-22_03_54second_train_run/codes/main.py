@@ -82,7 +82,7 @@ parser.add_argument('--beta', type=float, default=0.75,
 parser.add_argument('--remark', default='', help='comment')
 parser.add_argument('--test', default='', help='test mode, you need give the test pics dirs in this param')
 
-parser.add_argument('--hostname', default="K.Duy", help='the  host name of the running server')
+parser.add_argument('--hostname', default=socket.gethostname(), help='the  host name of the running server')
 parser.add_argument('--debug', type=bool, default=False, help='debug mode do not create folders')
 parser.add_argument('--logFrequency', type=int, default=10, help='the frequency of print the log on the console')
 parser.add_argument('--resultPicFrequency', type=int, default=100, help='the frequency of save the resultPic')
@@ -202,7 +202,7 @@ def main():
     if not opt.debug:
         try:
             cur_time = time.strftime('%Y-%m-%d-%H_%M_%S', time.localtime())
-            experiment_dir = opt.hostname + "_" + cur_time + "_" + opt.remark
+            experiment_dir = opt.hostname + "_" + cur_time + opt.remark
             opt.outckpts += experiment_dir + "/checkPoints"
             opt.trainpics += experiment_dir + "/trainPics"
             opt.validationpics += experiment_dir + "/validationPics"
@@ -251,8 +251,8 @@ def main():
         assert train_dataset
         assert val_dataset
     else:
-        # opt.Hnet = "./checkPoint/netH_epoch_73,sumloss=0.000447,Hloss=0.000258.pth"
-        # opt.Rnet = "./checkPoint/netR_epoch_73,sumloss=0.000447,Rloss=0.000252.pth"
+        opt.Hnet = "./checkPoint/netH_epoch_73,sumloss=0.000447,Hloss=0.000258.pth"
+        opt.Rnet = "./checkPoint/netR_epoch_73,sumloss=0.000447,Rloss=0.000252.pth"
         testdir = opt.test
         test_dataset = MyImageFolder(
             testdir,
@@ -269,7 +269,6 @@ def main():
     if opt.Hnet != "":
         checkpointH = torch.load(opt.Hnet)
         Hnet.load_state_dict(checkpointH['model_state_dict'])
-        print ("=> Loaded Hnet checkpoint from '{}' (epoch {})".format(opt.Hnet, checkpointH.get('epoch', 0)))
     if opt.ngpu > 1:
         Hnet = torch.nn.DataParallel(Hnet).cuda()
     print_network(Hnet)
@@ -280,7 +279,6 @@ def main():
     if opt.Rnet != '':
         checkpointR = torch.load(opt.Rnet)
         Rnet.load_state_dict(checkpointR['model_state_dict'])
-        print ("=> Loaded Rnet checkpoint from '{}' (epoch {})".format(opt.Rnet, checkpointR.get('epoch', 0)))
     if opt.ngpu > 1:
         Rnet = torch.nn.DataParallel(Rnet).cuda()
     print_network(Rnet)
@@ -324,11 +322,8 @@ def main():
         print_log("training is beginning .......................................................", logPath)
         for epoch in range(start_epoch, opt.niter):
             ######################## train ##########################################
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-            print(f"==== Train EPOCH {epoch}; START at: {current_time} ====")
             train(train_loader, epoch, Hnet=Hnet, Rnet=Rnet, criterion=criterion)
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-            print(f"==== Train EPOCH {epoch}; END at: {current_time} ====")
+
             ####################### validation  #####################################
             val_hloss, val_rloss, val_sumloss = validation(val_loader, epoch, Hnet=Hnet, Rnet=Rnet, criterion=criterion)
 
@@ -381,7 +376,6 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
     Hnet.train()
     Rnet.train()
 
-    
     start_time = time.time()
     for i, data in enumerate(train_loader, 0):
         data_time.update(time.time() - start_time)
@@ -464,8 +458,8 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
 
 def validation(val_loader, epoch, Hnet, Rnet, criterion):
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f"==== Validation START at: {current_time} ====")
+    print(
+        "#################################################### validation begin ########################################################")
     start_time = time.time()
     Hnet.eval()
     Rnet.eval()
@@ -577,8 +571,6 @@ def validation(val_loader, epoch, Hnet, Rnet, criterion):
     val_time = time.time() - start_time
     val_log = "validation[%d] val_Hloss = %.6f\t val_Rloss = %.6f\t val_Sumloss = %.6f\t validation time=%.2f" % (
         epoch, val_hloss, val_rloss, val_sumloss, val_time)
-    val_log += "\t val_H_PSNR=%.2f\t val_H_SSIM=%.4f\t val_R_PSNR=%.2f\t val_R_SSIM=%.4f" % (
-    Hpsnrs.avg, Hssims.avg, Rpsnrs.avg, Rssims.avg)
     print_log(val_log, logPath)
 
     if not opt.debug:
@@ -586,13 +578,13 @@ def validation(val_loader, epoch, Hnet, Rnet, criterion):
         writer.add_scalar('validation/R_loss_avg', Rlosses.avg, epoch)
         writer.add_scalar('validation/sum_loss_avg', val_sumloss, epoch)
 
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f"==== Validation END at: {current_time} ====")
+    print(
+        "#################################################### validation end ########################################################")
     return val_hloss, val_rloss, val_sumloss
 
 def test(test_loader, epoch, Hnet, Rnet, criterion):
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f"==== Test START at: {current_time} ====")
+    print(
+        "#################################################### test begin ########################################################")
     start_time = time.time()
     Hnet.eval()
     Rnet.eval()    
@@ -708,9 +700,9 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
     val_log += "\t val_H_PSNR=%.2f\t val_H_SSIM=%.4f\t val_R_PSNR=%.2f\t val_R_SSIM=%.4f || \t val_H_SSIM_v1=%.4f \t val_R_SSIM_v1=%.4f" % (
     Hpsnrs.avg, Hssims.avg, Rpsnrs.avg, Rssims.avg, Hssims_v1.avg, Rssims_v1.avg)
     print_log(val_log, logPath)
-    
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f"==== Test END at: {current_time} ====")   
+
+    print(
+        "#################################################### test end ########################################################")
     return val_hloss, val_rloss, val_sumloss
 
 

@@ -324,11 +324,8 @@ def main():
         print_log("training is beginning .......................................................", logPath)
         for epoch in range(start_epoch, opt.niter):
             ######################## train ##########################################
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-            print(f"==== Train EPOCH {epoch}; START at: {current_time} ====")
             train(train_loader, epoch, Hnet=Hnet, Rnet=Rnet, criterion=criterion)
-            current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-            print(f"==== Train EPOCH {epoch}; END at: {current_time} ====")
+
             ####################### validation  #####################################
             val_hloss, val_rloss, val_sumloss = validation(val_loader, epoch, Hnet=Hnet, Rnet=Rnet, criterion=criterion)
 
@@ -381,7 +378,6 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
     Hnet.train()
     Rnet.train()
 
-    
     start_time = time.time()
     for i, data in enumerate(train_loader, 0):
         data_time.update(time.time() - start_time)
@@ -464,8 +460,8 @@ def train(train_loader, epoch, Hnet, Rnet, criterion):
 
 
 def validation(val_loader, epoch, Hnet, Rnet, criterion):
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f"==== Validation START at: {current_time} ====")
+    print(
+        "#################################################### validation begin ########################################################")
     start_time = time.time()
     Hnet.eval()
     Rnet.eval()
@@ -586,13 +582,13 @@ def validation(val_loader, epoch, Hnet, Rnet, criterion):
         writer.add_scalar('validation/R_loss_avg', Rlosses.avg, epoch)
         writer.add_scalar('validation/sum_loss_avg', val_sumloss, epoch)
 
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f"==== Validation END at: {current_time} ====")
+    print(
+        "#################################################### validation end ########################################################")
     return val_hloss, val_rloss, val_sumloss
 
 def test(test_loader, epoch, Hnet, Rnet, criterion):
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f"==== Test START at: {current_time} ====")
+    print(
+        "#################################################### test begin ########################################################")
     start_time = time.time()
     Hnet.eval()
     Rnet.eval()    
@@ -708,9 +704,9 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
     val_log += "\t val_H_PSNR=%.2f\t val_H_SSIM=%.4f\t val_R_PSNR=%.2f\t val_R_SSIM=%.4f || \t val_H_SSIM_v1=%.4f \t val_R_SSIM_v1=%.4f" % (
     Hpsnrs.avg, Hssims.avg, Rpsnrs.avg, Rssims.avg, Hssims_v1.avg, Rssims_v1.avg)
     print_log(val_log, logPath)
-    
-    current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())
-    print(f"==== Test END at: {current_time} ====")   
+
+    print(
+        "#################################################### test end ########################################################")
     return val_hloss, val_rloss, val_sumloss
 
 
