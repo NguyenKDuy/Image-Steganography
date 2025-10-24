@@ -3,7 +3,6 @@ import torch.utils.data as data
 from PIL import Image
 import os
 import os.path
-import shutil
 
 IMG_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.ppm', '.bmp', '.pgm']
 
@@ -44,24 +43,6 @@ def make_dataset(dir, class_to_idx):
                     images.append(item)
 
     return images
-
-def merge_classes(dir, dst_dir):
-    os.makedirs(dst_dir, exist_ok=True)
-    for class_name in os.listdir(dir):
-        class_path = os.path.join(dir, class_name,"images")
-        if not os.path.isdir(class_path):
-            continue
-
-        for fname in os.listdir(class_path):
-            src = os.path.join(class_path, fname)
-            if not os.path.isfile(src):
-                continue
-
-            # tạo tên mới để tránh trùng
-            new_name = f"{class_name}_{fname}"
-            dst = os.path.join(dst_dir, new_name)
-
-            shutil.copy2(src, dst)
 
 
 def pil_loader(path):
@@ -141,13 +122,3 @@ class MyImageFolder(data.Dataset):
 
     def __len__(self):
         return self.len
-
-
-def main ():
-    train_path = r"E:\Downloads\imagenet-tiny\train"
-    train_dst_dir = r"E:\Downloads\imagenet-tiny\training"
-    merge_classes(train_path, train_dst_dir)
-    
-if __name__ == '__main__':
-    main()
-    

@@ -498,9 +498,6 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
     Rpsnrs = AverageMeter()  # PSNR for R-net (secret vs recovered)
     Rssims = AverageMeter()  # SSIM for R-net
     
-    Hssims_v1 = AverageMeter()  # SSIM for R-net
-    Rssims_v1 = AverageMeter()  # SSIM for R-net
-    
     for i, data in enumerate(test_loader, 0):
         Hnet.zero_grad()
         Rnet.zero_grad()
@@ -544,12 +541,9 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
                 container_np[j].transpose(1,2,0),
                 channel_axis=2,      # trục kênh là cuối
                 win_size=11,          # đặt win_size, đảm bảo <= min(H,W)
-                data_range=1.0,
-                gaussian_weights=True,
-                use_sample_covariance=False,
-                padding='same'
+                data_range=1.0
             )
-            h_ssim_v1 = ssim_v1(
+            h_ssim = ssim_v1(
                 cover_np[j].transpose(1,2,0),
                 container_np[j].transpose(1,2,0),
                 channel_axis=2,      # trục kênh là cuối
@@ -560,7 +554,6 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
 
             Hpsnrs.update(h_psnr, 1)
             Hssims.update(h_ssim, 1)
-            Hssims_v1.update(h_ssim_v1, 1)
 
             # R-net metrics
             r_psnr = psnr(secret_np[j].transpose(1,2,0), rev_secret_np[j].transpose(1,2,0), data_range=1.0)
@@ -570,11 +563,8 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
                 channel_axis=2,
                 win_size=11,
                 data_range=1.0,
-                gaussian_weights=True,
-                use_sample_covariance=False,
-                padding='same'
             )
-            r_ssim_v1 = ssim_v1(
+            r_ssim = ssim_v1(
                 secret_np[j].transpose(1,2,0),
                 rev_secret_np[j].transpose(1,2,0),
                 channel_axis=2,
@@ -585,7 +575,6 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
 
             Rpsnrs.update(r_psnr, 1)
             Rssims.update(r_ssim, 1)
-            Rssims_v1.update(r_ssim_v1, 1)
         
         save_result_pic(this_batch_size, cover_img, container_img.data, secret_img, rev_secret_img.data, epoch, i,
                         opt.testPics)
@@ -597,8 +586,8 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
     val_time = time.time() - start_time
     val_log = "validation[%d] val_Hloss = %.6f\t val_Rloss = %.6f\t val_Sumloss = %.6f\t validation time=%.2f" % (
         epoch, val_hloss, val_rloss, val_sumloss, val_time)
-    val_log += "\t val_H_PSNR=%.2f\t val_H_SSIM=%.4f\t val_R_PSNR=%.2f\t val_R_SSIM=%.4f || \t val_H_SSIM_v1=%.4f \t val_R_SSIM_v1=%.4f" % (
-    Hpsnrs.avg, Hssims.avg, Rpsnrs.avg, Rssims.avg, Hssims_v1.avg, Rssims_v1.avg)
+    val_log += "\t val_H_PSNR=%.2f\t val_H_SSIM=%.4f\t val_R_PSNR=%.2f\t val_R_SSIM=%.4f" % (
+    Hpsnrs.avg, Hssims.avg, Rpsnrs.avg, Rssims.avg)
     print_log(val_log, logPath)
 
     print(

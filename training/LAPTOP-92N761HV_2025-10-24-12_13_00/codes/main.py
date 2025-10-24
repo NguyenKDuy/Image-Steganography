@@ -92,7 +92,6 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
-
 # print the structure and parameters number of the net
 def print_network(net):
     num_params = 0
@@ -172,8 +171,8 @@ def main():
         # tensorboardX writer
         writer = SummaryWriter(comment='**' + opt.remark)
         ##############   get dataset   ############################
-        traindir = os.path.join(DATA_DIR, 'training')
-        valdir = os.path.join(DATA_DIR, 'val/images')
+        traindir = os.path.join(DATA_DIR, 'train')
+        valdir = os.path.join(DATA_DIR, 'val')
         train_dataset = MyImageFolder(
             traindir,
             transforms.Compose([
@@ -421,66 +420,6 @@ def validation(val_loader, epoch, Hnet, Rnet, criterion):
 
 from skimage.metrics import peak_signal_noise_ratio as psnr
 from skimage.metrics import structural_similarity as ssim
-import torch.nn.functional as F
-import numpy as np
-
-def ssim_v1(img1, img2, channel_axis=-1, win_size=11, data_range=1.0, device=None):
-    """
-    Compute SSIM between two images (NumPy or torch.Tensor)
-    Supports GPU if tensors are on CUDA device.
-    """
-
-    # --- convert numpy → tensor nếu cần ---
-    if isinstance(img1, np.ndarray):
-        img1 = torch.from_numpy(img1).permute(2, 0, 1).unsqueeze(0).float()
-    else:
-        img1 = img1.unsqueeze(0) if img1.ndim == 3 else img1
-
-    if isinstance(img2, np.ndarray):
-        img2 = torch.from_numpy(img2).permute(2, 0, 1).unsqueeze(0).float()
-    else:
-        img2 = img2.unsqueeze(0) if img2.ndim == 3 else img2
-
-    # --- normalize theo data_range ---
-    img1 = img1 / data_range
-    img2 = img2 / data_range
-
-    # --- chọn device ---
-    if device is None:
-        device = img1.device if img1.is_cuda else torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    img1 = img1.to(device)
-    img2 = img2.to(device)
-
-    # --- define gaussian window ---
-    def gaussian_window(window_size, sigma):
-        gauss = torch.tensor([np.exp(-(x - window_size // 2)**2 / float(2 * sigma**2)) for x in range(window_size)], device=device)
-        return gauss / gauss.sum()
-
-    sigma = 1.5
-    window = gaussian_window(win_size, sigma).unsqueeze(1)
-    window2d = (window @ window.T).unsqueeze(0).unsqueeze(0).float()
-    window2d = window2d.expand(img1.size(1), 1, win_size, win_size).to(img1.device).to(img1.dtype)
-
-    mu1 = F.conv2d(img1, window2d, padding=win_size//2, groups=img1.size(1))
-    mu2 = F.conv2d(img2, window2d, padding=win_size//2, groups=img2.size(1))
-
-    mu1_sq = mu1.pow(2)
-    mu2_sq = mu2.pow(2)
-    mu1_mu2 = mu1 * mu2
-
-    sigma1_sq = F.conv2d(img1 * img1, window2d, padding=win_size//2, groups=img1.size(1)) - mu1_sq
-    sigma2_sq = F.conv2d(img2 * img2, window2d, padding=win_size//2, groups=img2.size(1)) - mu2_sq
-    sigma12 = F.conv2d(img1 * img2, window2d, padding=win_size//2, groups=img1.size(1)) - mu1_mu2
-
-    C1 = (0.01 * data_range) ** 2
-    C2 = (0.03 * data_range) ** 2
-
-    ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) * (sigma1_sq + sigma2_sq + C2))
-    ssim_val = ssim_map.mean().item()
-
-    return ssim_val
-
 
 def test(test_loader, epoch, Hnet, Rnet, criterion):
     print(
@@ -497,9 +436,6 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
     Hssims = AverageMeter()  # SSIM for H-net
     Rpsnrs = AverageMeter()  # PSNR for R-net (secret vs recovered)
     Rssims = AverageMeter()  # SSIM for R-net
-    
-    Hssims_v1 = AverageMeter()  # SSIM for R-net
-    Rssims_v1 = AverageMeter()  # SSIM for R-net
     
     for i, data in enumerate(test_loader, 0):
         Hnet.zero_grad()
@@ -544,23 +480,11 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
                 container_np[j].transpose(1,2,0),
                 channel_axis=2,      # trục kênh là cuối
                 win_size=11,          # đặt win_size, đảm bảo <= min(H,W)
-                data_range=1.0,
-                gaussian_weights=True,
-                use_sample_covariance=False,
-                padding='same'
-            )
-            h_ssim_v1 = ssim_v1(
-                cover_np[j].transpose(1,2,0),
-                container_np[j].transpose(1,2,0),
-                channel_axis=2,      # trục kênh là cuối
-                win_size=11,          # đặt win_size, đảm bảo <= min(H,W)
-                data_range=1.0,
-                device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                data_range=1.0
             )
 
             Hpsnrs.update(h_psnr, 1)
             Hssims.update(h_ssim, 1)
-            Hssims_v1.update(h_ssim_v1, 1)
 
             # R-net metrics
             r_psnr = psnr(secret_np[j].transpose(1,2,0), rev_secret_np[j].transpose(1,2,0), data_range=1.0)
@@ -569,23 +493,11 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
                 rev_secret_np[j].transpose(1,2,0),
                 channel_axis=2,
                 win_size=11,
-                data_range=1.0,
-                gaussian_weights=True,
-                use_sample_covariance=False,
-                padding='same'
-            )
-            r_ssim_v1 = ssim_v1(
-                secret_np[j].transpose(1,2,0),
-                rev_secret_np[j].transpose(1,2,0),
-                channel_axis=2,
-                win_size=11,
-                data_range=1.0,
-                device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+                data_range=1.0
             )
 
             Rpsnrs.update(r_psnr, 1)
             Rssims.update(r_ssim, 1)
-            Rssims_v1.update(r_ssim_v1, 1)
         
         save_result_pic(this_batch_size, cover_img, container_img.data, secret_img, rev_secret_img.data, epoch, i,
                         opt.testPics)
@@ -597,8 +509,8 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
     val_time = time.time() - start_time
     val_log = "validation[%d] val_Hloss = %.6f\t val_Rloss = %.6f\t val_Sumloss = %.6f\t validation time=%.2f" % (
         epoch, val_hloss, val_rloss, val_sumloss, val_time)
-    val_log += "\t val_H_PSNR=%.2f\t val_H_SSIM=%.4f\t val_R_PSNR=%.2f\t val_R_SSIM=%.4f || \t val_H_SSIM_v1=%.4f \t val_R_SSIM_v1=%.4f" % (
-    Hpsnrs.avg, Hssims.avg, Rpsnrs.avg, Rssims.avg, Hssims_v1.avg, Rssims_v1.avg)
+    val_log += "\t val_H_PSNR=%.2f\t val_H_SSIM=%.4f\t val_R_PSNR=%.2f\t val_R_SSIM=%.4f" % (
+    Hpsnrs.avg, Hssims.avg, Rpsnrs.avg, Rssims.avg)
     print_log(val_log, logPath)
 
     print(

@@ -544,10 +544,7 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
                 container_np[j].transpose(1,2,0),
                 channel_axis=2,      # trục kênh là cuối
                 win_size=11,          # đặt win_size, đảm bảo <= min(H,W)
-                data_range=1.0,
-                gaussian_weights=True,
-                use_sample_covariance=False,
-                padding='same'
+                data_range=1.0
             )
             h_ssim_v1 = ssim_v1(
                 cover_np[j].transpose(1,2,0),
@@ -570,9 +567,6 @@ def test(test_loader, epoch, Hnet, Rnet, criterion):
                 channel_axis=2,
                 win_size=11,
                 data_range=1.0,
-                gaussian_weights=True,
-                use_sample_covariance=False,
-                padding='same'
             )
             r_ssim_v1 = ssim_v1(
                 secret_np[j].transpose(1,2,0),
